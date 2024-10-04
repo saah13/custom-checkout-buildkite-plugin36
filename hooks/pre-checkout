@@ -7,22 +7,25 @@ function plugin_echo() {
   echo -e "\033[33m[custom-checkout] $1\033[0m"
 }
 
+# Plugin identifier derived from the repository name
+PLUGIN_ID="BUILDKITE_PLUGIN_BUILDKITE_PLUGIN_CUSTOM_CHECKOUT"
+
 # Override BUILDKITE_REPO if repository parameter is set
-if [[ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY:-}" ]]; then
-  export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
+if [[ -n "${!PLUGIN_ID}_REPOSITORY:-}" ]]; then
+  export BUILDKITE_REPO="${!PLUGIN_ID}_REPOSITORY"
   plugin_echo "Overriding BUILDKITE_REPO to ${BUILDKITE_REPO}"
 else
   plugin_echo "No custom repository specified. Using default."
 fi
 
 # Override BUILDKITE_BRANCH if branch parameter is set
-if [[ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH:-}" ]]; then
-  export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
+if [[ -n "${!PLUGIN_ID}_BRANCH:-}" ]]; then
+  export BUILDKITE_BRANCH="${!PLUGIN_ID}_BRANCH"
   plugin_echo "Overriding BUILDKITE_BRANCH to ${BUILDKITE_BRANCH}"
 fi
 
 # Override BUILDKITE_COMMIT if commit parameter is set
-if [[ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT:-}" ]]; then
-  export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
+if [[ -n "${!PLUGIN_ID}_COMMIT:-}" ]]; then
+  export BUILDKITE_COMMIT="${!PLUGIN_ID}_COMMIT"
   plugin_echo "Overriding BUILDKITE_COMMIT to ${BUILDKITE_COMMIT}"
 fi
