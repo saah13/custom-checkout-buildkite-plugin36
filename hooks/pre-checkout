@@ -1,31 +1,26 @@
 #!/bin/bash
 
-set -euo pipefail
+# Check if the build was triggered by a webhook
+if [[ -n "$BUILDKITE_BUILD_ID" ]]; then
+  query='{
+    "query": "query GetWebhookPayLoad { build(uuid: \"'${BUILDKITE_BUILD_ID}'\") { source { ... on BuildSourceWebhook { payload } } } }"
+  }'
 
-# Function to print messages with plugin prefix
-function plugin_echo() {
-  echo -e "\033[33m[custom-checkout] $1\033[0m"
-}
+  response=$(curl -s https://graphql.buildkite.com/v1 \
+    -H "Authorization: Bearer $BUILDKITE_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$query")
 
-# Plugin identifier derived from the repository name
-PLUGIN_ID="BUILDKITE_PLUGIN_BUILDKITE_PLUGIN_CUSTOM_CHECKOUT"
+  # Extract the repository URL from the payload (assuming the payload includes it)
+  repo_url=$(echo "$response" | jq -r '.data.build.source.payload.repository_url')
 
-# Override BUILDKITE_REPO if repository parameter is set
-if [[ -n "${!PLUGIN_ID}_REPOSITORY:-}" ]]; then
-  export BUILDKITE_REPO="${!PLUGIN_ID}_REPOSITORY"
-  plugin_echo "Overriding BUILDKITE_REPO to ${BUILDKITE_REPO}"
+  # If repo_url is found, set BUILDKITE_REPO to that value
+  if [[ "$repo_url" != "null" ]]; then
+    export BUILDKITE_REPO="$repo_url"
+    echo "Using repository: $BUILDKITE_REPO"
+  else
+    echo "No webhook repository found, using default repository."
+  fi
 else
-  plugin_echo "No custom repository specified. Using default."
-fi
-
-# Override BUILDKITE_BRANCH if branch parameter is set
-if [[ -n "${!PLUGIN_ID}_BRANCH:-}" ]]; then
-  export BUILDKITE_BRANCH="${!PLUGIN_ID}_BRANCH"
-  plugin_echo "Overriding BUILDKITE_BRANCH to ${BUILDKITE_BRANCH}"
-fi
-
-# Override BUILDKITE_COMMIT if commit parameter is set
-if [[ -n "${!PLUGIN_ID}_COMMIT:-}" ]]; then
-  export BUILDKITE_COMMIT="${!PLUGIN_ID}_COMMIT"
-  plugin_echo "Overriding BUILDKITE_COMMIT to ${BUILDKITE_COMMIT}"
+  echo "Build was not triggered by a webhook, using default repository."
 fi
