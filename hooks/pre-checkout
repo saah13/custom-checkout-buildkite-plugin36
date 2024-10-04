@@ -10,22 +10,29 @@ function plugin_echo() {
 # Plugin identifier derived from the repository name
 PLUGIN_ID="BUILDKITE_PLUGIN_BUILDKITE_PLUGIN_CUSTOM_CHECKOUT"
 
+# Construct the full variable names
+REPO_VAR="${PLUGIN_ID}_REPOSITORY"
+BRANCH_VAR="${PLUGIN_ID}_BRANCH"
+COMMIT_VAR="${PLUGIN_ID}_COMMIT"
+
+# Then use indirect expansion to get their values
+
 # Override BUILDKITE_REPO if repository parameter is set
-if [[ -n "${!PLUGIN_ID}_REPOSITORY:-}" ]]; then
-  export BUILDKITE_REPO="${!PLUGIN_ID}_REPOSITORY"
+if [[ -n "${!REPO_VAR:-}" ]]; then
+  export BUILDKITE_REPO="${!REPO_VAR}"
   plugin_echo "Overriding BUILDKITE_REPO to ${BUILDKITE_REPO}"
 else
   plugin_echo "No custom repository specified. Using default."
 fi
 
 # Override BUILDKITE_BRANCH if branch parameter is set
-if [[ -n "${!PLUGIN_ID}_BRANCH:-}" ]]; then
-  export BUILDKITE_BRANCH="${!PLUGIN_ID}_BRANCH"
+if [[ -n "${!BRANCH_VAR:-}" ]]; then
+  export BUILDKITE_BRANCH="${!BRANCH_VAR}"
   plugin_echo "Overriding BUILDKITE_BRANCH to ${BUILDKITE_BRANCH}"
 fi
 
 # Override BUILDKITE_COMMIT if commit parameter is set
-if [[ -n "${!PLUGIN_ID}_COMMIT:-}" ]]; then
-  export BUILDKITE_COMMIT="${!PLUGIN_ID}_COMMIT"
+if [[ -n "${!COMMIT_VAR:-}" ]]; then
+  export BUILDKITE_COMMIT="${!COMMIT_VAR}"
   plugin_echo "Overriding BUILDKITE_COMMIT to ${BUILDKITE_COMMIT}"
 fi
