@@ -13,9 +13,16 @@ error() {
   exit 1
 }
 
+# Debug: Print all BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 environment variables
+log "Debug: Printing all BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 environment variables"
+env | grep BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 || true
+
 # Parse plugin configuration
-CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT24_REPOS_0_CONFIG_0_URL:-}"
-CUSTOM_REF="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT24_REPOS_0_CONFIG_0_REF:-}"
+CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25_REPOS_0_CONFIG_0_URL:-}"
+CUSTOM_REF="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25_REPOS_0_CONFIG_0_REF:-}"
+
+log "Debug: CUSTOM_REPO=$CUSTOM_REPO"
+log "Debug: CUSTOM_REF=$CUSTOM_REF"
 
 if [[ -z "$CUSTOM_REPO" ]]; then
   error "No repository URL specified in the plugin configuration"
