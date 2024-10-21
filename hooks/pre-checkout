@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/bash
+
+set -euo pipefail
 
 parse_plugin_config() {
   if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
@@ -15,22 +17,24 @@ parse_plugin_config() {
 
 parse_plugin_config
 
-if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
-  export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
-fi
-
-if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-}" ]; then
-  export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
-elif [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-}" ]; then
-  export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
-fi
+BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-${BUILDKITE_REPO-}}"
+BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-${BUILDKITE_BRANCH-}}"
+BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-${BUILDKITE_COMMIT-}}"
 
 echo "Custom checkout configured:"
-echo "Repository: ${BUILDKITE_REPO-<not set>}"
-echo "Branch: ${BUILDKITE_BRANCH-<default>}"
-echo "Commit: ${BUILDKITE_COMMIT-<default>}"
+echo "Repository: ${BUILDKITE_REPO:-<not set>}"
+echo "Branch: ${BUILDKITE_BRANCH:-<not set>}"
+echo "Commit: ${BUILDKITE_COMMIT:-<not set>}"
 
 # Ensure these variables are available to subsequent steps
-buildkite-agent env set BUILDKITE_REPO "${BUILDKITE_REPO}"
-buildkite-agent env set BUILDKITE_BRANCH "${BUILDKITE_BRANCH}"
-buildkite-agent env set BUILDKITE_COMMIT "${BUILDKITE_COMMIT}"
+if [ -n "${BUILDKITE_REPO-}" ]; then
+  buildkite-agent env set BUILDKITE_REPO "${BUILDKITE_REPO}"
+fi
+
+if [ -n "${BUILDKITE_BRANCH-}" ]; then
+  buildkite-agent env set BUILDKITE_BRANCH "${BUILDKITE_BRANCH}"
+fi
+
+if [ -n "${BUILDKITE_COMMIT-}" ]; then
+  buildkite-agent env set BUILDKITE_COMMIT "${BUILDKITE_COMMIT}"
+fi
