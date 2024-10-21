@@ -2,26 +2,22 @@
 
 set -euo pipefail
 
-function set_env {
+function set_env() {
   local env_name=$1
   local env_value=$2
   export "${env_name}"="${env_value}"
-  echo "${env_name}=${!env_name}"
+  echo "${env_name}"="${!env_name}"
 }
 
-function setup_environment {
-  echo "--- :house_with_garden: Setting up environment"
-  
-  if [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_INTERPOLATE_CHECKOUT_PATH ]]; then
-    local interpolated_path
-    interpolated_path=$(eval echo "$BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_INTERPOLATE_CHECKOUT_PATH")
-    set_env BUILDKITE_BUILD_CHECKOUT_PATH "$interpolated_path"
-  elif [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH ]]; then
-    set_env BUILDKITE_BUILD_CHECKOUT_PATH "${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH}"
-  fi
+echo "--- :house_with_garden: Setting up environment"
 
+if [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_INTERPOLATE_CHECKOUT_PATH ]]; then
+  INTERPOLATED_CHECKOUT_PATH=$(eval echo "$BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_INTERPOLATE_CHECKOUT_PATH")
+  set_env BUILDKITE_BUILD_CHECKOUT_PATH "$INTERPOLATED_CHECKOUT_PATH"
   # WORKSPACE is deprecated and preserved for backward compatibility.
   set_env WORKSPACE "${BUILDKITE_BUILD_CHECKOUT_PATH}"
-}
-
-setup_environment
+elif [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH ]]; then
+  set_env BUILDKITE_BUILD_CHECKOUT_PATH "${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH}"
+  # WORKSPACE is deprecated and preserved for backward compatibility.
+  set_env WORKSPACE "${BUILDKITE_BUILD_CHECKOUT_PATH}"
+fi
