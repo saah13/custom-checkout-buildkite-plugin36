@@ -62,4 +62,7 @@ elif [ -n "${BUILDKITE_COMMIT-}" ]; then
   git checkout "${BUILDKITE_COMMIT}"
 fi
 
+# Tell Buildkite that we've handled the checkout
+export BUILDKITE_CLEAN_CHECKOUT=true
+
 echo "Debug: Ending pre-checkout hook"
