@@ -1,6 +1,6 @@
 name: Custom Checkout
 description: Specify a custom Git repository, branch, or commit to checkout
-author: https://github.com/your-username
+author: https://github.com/saah13
 requirements:
   - git
 configuration:
@@ -11,5 +11,3 @@ configuration:
       type: string
     commit:
       type: string
-  required:
-    - repository
