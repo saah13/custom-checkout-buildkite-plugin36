@@ -44,10 +44,20 @@ echo "Branch: ${BUILDKITE_BRANCH-<default>}"
 echo "Commit: ${BUILDKITE_COMMIT-<default>}"
 
 # Perform the actual checkout
-git clone "${BUILDKITE_REPO}" .
+if [ -d ".git" ]; then
+  echo "Debug: Git repository already exists, updating instead of cloning"
+  git remote set-url origin "${BUILDKITE_REPO}"
+  git fetch origin
+else
+  echo "Debug: Cloning repository"
+  git clone "${BUILDKITE_REPO}" .
+fi
+
 if [ -n "${BUILDKITE_BRANCH-}" ]; then
-  git checkout "${BUILDKITE_BRANCH}"
+  echo "Debug: Checking out branch ${BUILDKITE_BRANCH}"
+  git checkout -B "${BUILDKITE_BRANCH}" "origin/${BUILDKITE_BRANCH}"
 elif [ -n "${BUILDKITE_COMMIT-}" ]; then
+  echo "Debug: Checking out commit ${BUILDKITE_COMMIT}"
   git checkout "${BUILDKITE_COMMIT}"
 fi
 
