@@ -1,8 +1,4 @@
-#!/bin/bash
-
-set -euo pipefail
-
-echo "Debug: Starting pre-checkout hook"
+#!/bin/sh
 
 # Parse plugin configuration (simplified for testing)
 parse_plugin_config() {
@@ -21,27 +17,20 @@ parse_plugin_config() {
 # Parse plugin configuration
 parse_plugin_config
 
-echo "Debug: Plugin configuration:"
-echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-<not set>}"
-echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-<not set>}"
-echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-<not set>}"
-
 # Override BUILDKITE_REPO if custom repository is provided
 if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
-  export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
+  BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
 fi
 
 # Set custom branch or commit if provided
 if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-}" ]; then
-  export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
+  BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
 elif [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-}" ]; then
-  export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
+  BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
 fi
 
-# Log the final configuration
+# Log the changes
 echo "Custom checkout configured:"
 echo "Repository: ${BUILDKITE_REPO-<not set>}"
 echo "Branch: ${BUILDKITE_BRANCH-<default>}"
 echo "Commit: ${BUILDKITE_COMMIT-<default>}"
-
-echo "Debug: Ending pre-checkout hook"
