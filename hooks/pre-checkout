@@ -4,29 +4,44 @@ set -euo pipefail
 
 echo "Debug: Starting pre-checkout hook"
 
-# Read plugin configuration from JSON file
-if [ -f "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILDKITE_PLUGIN7_CONFIG_PATH" ]; then
-    echo "Debug: Reading config from $BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILDKITE_PLUGIN7_CONFIG_PATH"
-    CUSTOM_REPO=$(jq -r '.repository // empty' "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILDKITE_PLUGIN7_CONFIG_PATH")
-    CUSTOM_BRANCH=$(jq -r '.branch // empty' "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILDKITE_PLUGIN7_CONFIG_PATH")
-    CUSTOM_COMMIT=$(jq -r '.commit // empty' "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILDKITE_PLUGIN7_CONFIG_PATH")
-else
-    echo "Debug: Config file not found"
+# Parse plugin configuration (simplified for testing)
+parse_plugin_config() {
+  if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
+    case "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY" in
+      https://*|http://*|git://*|ssh://*)
+        ;;
+      *)
+        echo "Error: Invalid repository URL format" >&2
+        exit 1
+        ;;
+    esac
+  fi
+}
+
+# Parse plugin configuration
+parse_plugin_config
+
+echo "Debug: Plugin configuration:"
+echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-<not set>}"
+echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-<not set>}"
+echo "BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-<not set>}"
+
+# Override BUILDKITE_REPO if custom repository is provided
+if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
+  export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
 fi
 
-# Set variables, defaulting to current BUILDKITE_* values if not set
-CUSTOM_REPO="${CUSTOM_REPO:-$BUILDKITE_REPO}"
-CUSTOM_BRANCH="${CUSTOM_BRANCH:-$BUILDKITE_BRANCH}"
-CUSTOM_COMMIT="${CUSTOM_COMMIT:-$BUILDKITE_COMMIT}"
+# Set custom branch or commit if provided
+if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-}" ]; then
+  export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
+elif [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-}" ]; then
+  export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
+fi
 
+# Log the final configuration
 echo "Custom checkout configured:"
-echo "Repository: ${CUSTOM_REPO}"
-echo "Branch: ${CUSTOM_BRANCH}"
-echo "Commit: ${CUSTOM_COMMIT}"
-
-# Export for use in subsequent steps
-export BUILDKITE_REPO="$CUSTOM_REPO"
-export BUILDKITE_BRANCH="$CUSTOM_BRANCH"
-export BUILDKITE_COMMIT="$CUSTOM_COMMIT"
+echo "Repository: ${BUILDKITE_REPO-<not set>}"
+echo "Branch: ${BUILDKITE_BRANCH-<default>}"
+echo "Commit: ${BUILDKITE_COMMIT-<default>}"
 
 echo "Debug: Ending pre-checkout hook"
