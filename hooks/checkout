@@ -1,0 +1,58 @@
+#!/bin/bash
+
+set -euo pipefail
+
+echo "--- :git: Custom Checkout"
+
+# Function to log messages
+log() {
+  echo "~~~ $1"
+}
+
+# Function to handle errors
+error() {
+  echo "🚨 Error: $1" >&2
+  exit 1
+}
+
+# Parse plugin configuration
+CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY:-$BUILDKITE_REPO}"
+CUSTOM_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH:-$BUILDKITE_BRANCH}"
+CUSTOM_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT:-$BUILDKITE_COMMIT}"
+CUSTOM_PATH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
+
+log "Custom checkout configured:"
+log "Repository: ${CUSTOM_REPO}"
+log "Branch: ${CUSTOM_BRANCH}"
+log "Commit: ${CUSTOM_COMMIT}"
+log "Checkout path: ${CUSTOM_PATH}"
+
+# Ensure the checkout path exists
+mkdir -p "$CUSTOM_PATH"
+cd "$CUSTOM_PATH"
+
+# Perform the checkout
+if [ -d ".git" ]; then
+  log "Updating existing repository"
+  git remote set-url origin "$CUSTOM_REPO" || error "Failed to set remote URL"
+  git fetch origin || error "Failed to fetch from remote"
+else
+  log "Cloning repository"
+  git clone "$CUSTOM_REPO" . || error "Failed to clone repository"
+fi
+
+if [ -n "$CUSTOM_BRANCH" ]; then
+  log "Checking out branch: $CUSTOM_BRANCH"
+  git checkout -B "$CUSTOM_BRANCH" "origin/$CUSTOM_BRANCH" || error "Failed to checkout branch"
+elif [ -n "$CUSTOM_COMMIT" ]; then
+  log "Checking out commit: $CUSTOM_COMMIT"
+  git checkout "$CUSTOM_COMMIT" || error "Failed to checkout commit"
+fi
+
+# Set Buildkite environment variables
+export BUILDKITE_REPO="$CUSTOM_REPO"
+export BUILDKITE_REFSPEC="$CUSTOM_BRANCH"
+export BUILDKITE_COMMIT="$(git rev-parse HEAD)"
+export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_PATH"
+
+log "Custom checkout completed successfully"
