@@ -1,6 +1,5 @@
 #!/bin/sh
 
-# Parse plugin configuration (simplified for testing)
 parse_plugin_config() {
   if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
     case "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY" in
@@ -14,23 +13,24 @@ parse_plugin_config() {
   fi
 }
 
-# Parse plugin configuration
 parse_plugin_config
 
-# Override BUILDKITE_REPO if custom repository is provided
 if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
-  BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
+  export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
 fi
 
-# Set custom branch or commit if provided
 if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-}" ]; then
-  BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
+  export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
 elif [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-}" ]; then
-  BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
+  export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
 fi
 
-# Log the changes
 echo "Custom checkout configured:"
 echo "Repository: ${BUILDKITE_REPO-<not set>}"
 echo "Branch: ${BUILDKITE_BRANCH-<default>}"
 echo "Commit: ${BUILDKITE_COMMIT-<default>}"
+
+# Ensure these variables are available to subsequent steps
+buildkite-agent env set BUILDKITE_REPO "${BUILDKITE_REPO}"
+buildkite-agent env set BUILDKITE_BRANCH "${BUILDKITE_BRANCH}"
+buildkite-agent env set BUILDKITE_COMMIT "${BUILDKITE_COMMIT}"
