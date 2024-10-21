@@ -49,7 +49,8 @@ if [ -d ".git" ]; then
   git remote set-url origin "${BUILDKITE_REPO}"
   git fetch origin
 else
-  echo "Debug: Cloning repository"
+  echo "Debug: Directory not empty, cleaning and cloning repository"
+  rm -rf ./* ./.[!.]*
   git clone "${BUILDKITE_REPO}" .
 fi
 
