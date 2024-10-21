@@ -1,5 +1,5 @@
 name: Custom Checkout
-description: Specify a custom Git repository, branch, or commit to checkout
+description: Perform custom Git checkouts in Buildkite pipelines
 author: https://github.com/saah13
 requirements:
   - git
@@ -11,3 +11,6 @@ configuration:
       type: string
     commit:
       type: string
+    path:
+      type: string
+  additionalProperties: false
