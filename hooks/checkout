@@ -15,13 +15,17 @@ error() {
 
 # Parse plugin configuration
 parse_config() {
-  if [[ "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_SKIP_CHECKOUT:-false}" == "true" ]]; then
-    log "Skipping checkout as requested"
-    exit 0
+  SKIP_CHECKOUT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_SKIP_CHECKOUT:-false}"
+  if [[ "$SKIP_CHECKOUT" != "true" ]]; then
+    error "The 'skip_checkout' option must be set to true for this plugin to work correctly"
   fi
 
   CUSTOM_CHECKOUT_PATH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILD_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
   DELETE_CHECKOUT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_DELETE_CHECKOUT:-false}"
+  
+  # Parse custom repository configuration
+  CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-$BUILDKITE_REPO}"
+  CUSTOM_REF="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
 }
 
 # Perform git checkout
