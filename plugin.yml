@@ -1,6 +1,6 @@
 name: Custom Checkout
 description: Specify a custom Git repository, branch, or commit to checkout
-author: https://github.com/buildkite-plugins
+author: https://github.com/saah13
 requirements:
   - git
 configuration:
