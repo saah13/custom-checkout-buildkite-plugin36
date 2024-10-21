@@ -10,8 +10,8 @@ parse_plugin_config
 
 plugin_log "Custom checkout configured:"
 plugin_log "Repository: ${CUSTOM_REPO}"
-plugin_log "Branch: ${CUSTOM_BRANCH}"
-plugin_log "Commit: ${CUSTOM_COMMIT}"
+plugin_log "Branch: ${CUSTOM_BRANCH:-<not set>}"
+plugin_log "Commit: ${CUSTOM_COMMIT:-<not set>}"
 plugin_log "Checkout path: ${CUSTOM_PATH}"
 
 # Ensure the checkout path exists
