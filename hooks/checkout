@@ -59,22 +59,28 @@ parse_config
 mkdir -p "$CUSTOM_CHECKOUT_PATH"
 cd "$CUSTOM_CHECKOUT_PATH"
 
-for ((i=0; ; i++)); do
-  url_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_URL"
-  ref_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_REF"
-  clone_flags_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_CLONE_FLAGS"
-  ssh_key_path_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_SSH_KEY_PATH"
+# Check if any repos are configured
+if [[ -z "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-}" ]]; then
+  log "No repositories configured, using default BUILDKITE_REPO"
+  git_checkout "$BUILDKITE_REPO" "$BUILDKITE_BRANCH"
+else
+  for ((i=0; ; i++)); do
+    url_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_URL"
+    ref_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_REF"
+    clone_flags_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_CLONE_FLAGS"
+    ssh_key_path_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_SSH_KEY_PATH"
 
-  if [[ -z "${!url_var:-}" ]]; then
-    break
-  fi
+    if [[ -z "${!url_var:-}" ]]; then
+      break
+    fi
 
-  log "Checking out repository: ${!url_var}"
-  git_checkout "${!url_var}" "${!ref_var:-}" "${!clone_flags_var:-}" "${!ssh_key_path_var:-}"
-done
+    log "Checking out repository: ${!url_var}"
+    git_checkout "${!url_var}" "${!ref_var:-}" "${!clone_flags_var:-}" "${!ssh_key_path_var:-}"
+  done
+fi
 
 # Set Buildkite environment variables
-export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL}"
+export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-$BUILDKITE_REPO}"
 export BUILDKITE_REFSPEC="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
 export BUILDKITE_COMMIT="$(git rev-parse HEAD)"
 export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_CHECKOUT_PATH"
@@ -82,4 +88,9 @@ export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_CHECKOUT_PATH"
 log "Custom checkout completed successfully"
 log "Current commit: $BUILDKITE_COMMIT"
 log "Commit message: $(git log -1 --pretty=%B)"
-log "Commit
+log "Commit author: $(git log -1 --pretty=%an)"
+log "Commit date: $(git log -1 --pretty=%ad)"
+
+if [[ "$DELETE_CHECKOUT" == "true" ]]; then
+  trap 'rm -rf "$CUSTOM_CHECKOUT_PATH"' EXIT
+fi
