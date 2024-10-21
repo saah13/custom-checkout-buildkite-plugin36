@@ -1,6 +1,6 @@
 name: Smooth Checkout
 description: All the things you need during a Buildkite checkout
-author: https://github.com/Test
+author: https://github.com/hasura
 requirements: []
 configuration:
   properties:
