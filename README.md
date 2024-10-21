@@ -13,8 +13,29 @@ This plugin allows you to specify a custom Git repository, branch, or commit to 
 ```yaml
 steps:
   - label: "Build with Custom Repo"
-    command: "build.sh"
     plugins:
       - your-username/custom-checkout#v1.0.0:
           repository: "git@github.com:your-org/custom-repo.git"
           branch: "develop"
+    command: "build.sh"
+```
+
+## Development
+
+To run the tests:
+
+```bash
+bats tests/pre-checkout.bats
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+## License
+
+MIT (see [LICENSE](LICENSE))
