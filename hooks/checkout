@@ -2,61 +2,103 @@
 
 set -euo pipefail
 
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
 # Function to log messages
-log() {
-  echo "~~~ $1"
+plugin_log() {
+  echo -e "${GREEN}~~~ ${1}${NC}"
 }
 
-# Function to handle errors
-error() {
-  echo "🚨 Error: $1" >&2
+# Function to log errors
+plugin_error() {
+  echo -e "${RED}🚨 Error: ${1}${NC}" >&2
   exit 1
 }
 
-# Debug: Print all BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 environment variables
-log "Debug: Printing all BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 environment variables"
-env | grep BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25 || true
+# Function to check if a command exists
+command_exists() {
+  command -v "$1" >/dev/null 2>&1
+}
+
+# Function to check required commands
+check_required_commands() {
+  local cmds=("$@")
+  for cmd in "${cmds[@]}"; do
+    if ! command_exists "$cmd"; then
+      plugin_error "Required command not found: $cmd"
+    fi
+  done
+}
+
+# Check required commands
+check_required_commands git
 
 # Parse plugin configuration
-CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25_REPOS_0_CONFIG_0_URL:-}"
-CUSTOM_REF="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT25_REPOS_0_CONFIG_0_REF:-}"
-
-log "Debug: CUSTOM_REPO=$CUSTOM_REPO"
-log "Debug: CUSTOM_REF=$CUSTOM_REF"
-
-if [[ -z "$CUSTOM_REPO" ]]; then
-  error "No repository URL specified in the plugin configuration"
-fi
-
-log "Custom checkout configured:"
-log "Repository: ${CUSTOM_REPO}"
-log "Ref: ${CUSTOM_REF:-default branch}"
+parse_config() {
+  CUSTOM_CHECKOUT_PATH="${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
+  DELETE_CHECKOUT="${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_DELETE_CHECKOUT:-false}"
+}
 
 # Perform git checkout
-if [[ -d ".git" ]]; then
-  log "Updating existing repository"
-  git remote set-url origin "$CUSTOM_REPO" || error "Failed to set remote URL"
-  git fetch origin || error "Failed to fetch from remote"
-else
-  log "Cloning repository"
-  git clone "$CUSTOM_REPO" . || error "Failed to clone repository"
-fi
+git_checkout() {
+  local url="$1"
+  local ref="${2:-}"
+  local clone_flags="${3:-}"
+  local ssh_key_path="${4:-}"
 
-if [[ -n "$CUSTOM_REF" ]]; then
-  log "Checking out ref: $CUSTOM_REF"
-  git checkout -B "$CUSTOM_REF" "origin/$CUSTOM_REF" || error "Failed to checkout ref"
-else
-  log "Checking out default branch"
-  git checkout "$(git symbolic-ref --short HEAD)" || error "Failed to checkout default branch"
-fi
+  if [[ -n "$ssh_key_path" ]]; then
+    export GIT_SSH_COMMAND="ssh -i $ssh_key_path -o StrictHostKeyChecking=no"
+  fi
+
+  if [[ -d ".git" ]]; then
+    plugin_log "Updating existing repository"
+    git remote set-url origin "$url" || plugin_error "Failed to set remote URL"
+    git fetch origin || plugin_error "Failed to fetch from remote"
+  else
+    plugin_log "Cloning repository"
+    git clone $clone_flags "$url" . || plugin_error "Failed to clone repository"
+  fi
+
+  if [[ -n "$ref" ]]; then
+    plugin_log "Checking out ref: $ref"
+    git checkout -B "$ref" "origin/$ref" || plugin_error "Failed to checkout ref"
+  else
+    plugin_log "Checking out default branch"
+    git checkout -B "${BUILDKITE_BRANCH}" "origin/${BUILDKITE_BRANCH}" || plugin_error "Failed to checkout branch"
+  fi
+}
+
+# Main execution
+parse_config
+
+mkdir -p "$CUSTOM_CHECKOUT_PATH"
+cd "$CUSTOM_CHECKOUT_PATH"
+
+for ((i=0; ; i++)); do
+  url_var="BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_${i}_CONFIG_0_URL"
+  ref_var="BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_${i}_CONFIG_0_REF"
+  clone_flags_var="BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_${i}_CONFIG_0_CLONE_FLAGS"
+  ssh_key_path_var="BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_${i}_CONFIG_0_SSH_KEY_PATH"
+
+  if [[ -z "${!url_var:-}" ]]; then
+    break
+  fi
+
+  plugin_log "Checking out repository: ${!url_var}"
+  git_checkout "${!url_var}" "${!ref_var:-}" "${!clone_flags_var:-}" "${!ssh_key_path_var:-}"
+done
 
 # Set Buildkite environment variables
-export BUILDKITE_REPO="$CUSTOM_REPO"
-export BUILDKITE_REFSPEC="$CUSTOM_REF"
+export BUILDKITE_REPO="${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_0_CONFIG_0_URL}"
+export BUILDKITE_REFSPEC="${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
 export BUILDKITE_COMMIT="$(git rev-parse HEAD)"
+export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_CHECKOUT_PATH"
 
-log "Custom checkout completed successfully"
-log "Current commit: $BUILDKITE_COMMIT"
-log "Commit message: $(git log -1 --pretty=%B)"
-log "Commit author: $(git log -1 --pretty=%an)"
-log "Commit date: $(git log -1 --pretty=%ad)"
+plugin_log "Custom checkout completed successfully"
+plugin_log "Current commit: $BUILDKITE_COMMIT"
+plugin_log "Commit message: $(git log -1 --pretty=%B)"
+plugin_log "Commit author: $(git log -1 --pretty=%an)"
+plugin_log "Commit date: $(git log -1 --pretty=%ad)"
