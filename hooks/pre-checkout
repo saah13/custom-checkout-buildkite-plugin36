@@ -4,35 +4,22 @@ set -euo pipefail
 
 echo "Debug: Starting pre-checkout hook"
 
-echo "Debug: BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-<not set>}"
-echo "Debug: BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-<not set>}"
-echo "Debug: BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT=${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-<not set>}"
-echo "Debug: BUILDKITE_REPO before=${BUILDKITE_REPO-<not set>}"
+# Log all BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_* variables
+env | grep BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_ || echo "No BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_* variables set"
 
-parse_plugin_config() {
-  if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
-    case "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY" in
-      https://*|http://*|git://*|ssh://*)
-        ;;
-      *)
-        echo "Error: Invalid repository URL format" >&2
-        exit 1
-        ;;
-    esac
-  fi
-}
-
-parse_plugin_config
-
-export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-${BUILDKITE_REPO-}}"
-export BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-${BUILDKITE_BRANCH-}}"
-export BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-${BUILDKITE_COMMIT-}}"
-
-echo "Debug: BUILDKITE_REPO after=${BUILDKITE_REPO-<not set>}"
+# Set variables, defaulting to current BUILDKITE_* values if not set
+CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY:-$BUILDKITE_REPO}"
+CUSTOM_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH:-$BUILDKITE_BRANCH}"
+CUSTOM_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT:-$BUILDKITE_COMMIT}"
 
 echo "Custom checkout configured:"
-echo "Repository: ${BUILDKITE_REPO:-<not set>}"
-echo "Branch: ${BUILDKITE_BRANCH:-<not set>}"
-echo "Commit: ${BUILDKITE_COMMIT:-<not set>}"
+echo "Repository: ${CUSTOM_REPO}"
+echo "Branch: ${CUSTOM_BRANCH}"
+echo "Commit: ${CUSTOM_COMMIT}"
+
+# Export for use in subsequent steps
+export BUILDKITE_REPO="$CUSTOM_REPO"
+export BUILDKITE_BRANCH="$CUSTOM_BRANCH"
+export BUILDKITE_COMMIT="$CUSTOM_COMMIT"
 
 echo "Debug: Ending pre-checkout hook"
