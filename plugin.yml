@@ -1,18 +1,15 @@
-name: custom-checkout
-author: Your Name <your.email@example.com>
-description: A Buildkite plugin to allow custom repository checkout.
-version: "1.0.0"
-
+name: Custom Checkout
+description: Specify a custom Git repository, branch, or commit to checkout
+author: https://github.com/your-username
+requirements:
+  - git
 configuration:
-  repository:
-    type: string
-    required: true
-    description: "The Git repository URL to clone."
-  branch:
-    type: string
-    required: false
-    description: "The Git branch to checkout."
-  commit:
-    type: string
-    required: false
-    description: "The Git commit SHA to checkout."
+  properties:
+    repository:
+      type: string
+    branch:
+      type: string
+    commit:
+      type: string
+  required:
+    - repository
