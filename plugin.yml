@@ -5,12 +5,28 @@ requirements:
   - git
 configuration:
   properties:
-    repository:
+    repos:
+      type: array
+      items:
+        type: object
+        properties:
+          config:
+            type: array
+            items:
+              type: object
+              properties:
+                url:
+                  type: string
+                ref:
+                  type: string
+                clone_flags:
+                  type: [string, array]
+                ssh_key_path:
+                  type: string
+    skip_checkout:
+      type: boolean
+    build_checkout_path:
       type: string
-    branch:
-      type: string
-    commit:
-      type: string
-    path:
-      type: string
+    delete_checkout:
+      type: boolean
   additionalProperties: false
