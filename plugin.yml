@@ -11,5 +11,3 @@ configuration:
       type: string
     commit:
       type: string
-  required:
-    - repository
