@@ -1,28 +1,85 @@
 #!/bin/bash
 
-# Source the shared bash script
-. "$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/../lib/shared.bash"
+set -euo pipefail
 
-plugin_log "Custom Checkout"
+# Function to log messages
+log() {
+  echo "~~~ $1"
+}
+
+# Function to handle errors
+error() {
+  echo "🚨 Error: $1" >&2
+  exit 1
+}
 
 # Parse plugin configuration
-parse_plugin_config
+parse_config() {
+  if [[ "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_SKIP_CHECKOUT:-false}" == "true" ]]; then
+    log "Skipping checkout as requested"
+    exit 0
+  fi
 
-plugin_log "Custom checkout configured:"
-plugin_log "Repository: ${CUSTOM_REPO}"
-plugin_log "Branch: ${CUSTOM_BRANCH:-<not set>}"
-plugin_log "Commit: ${CUSTOM_COMMIT:-<not set>}"
-plugin_log "Checkout path: ${CUSTOM_PATH}"
+  CUSTOM_CHECKOUT_PATH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILD_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
+  DELETE_CHECKOUT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_DELETE_CHECKOUT:-false}"
+}
 
-# Ensure the checkout path exists
-mkdir -p "$CUSTOM_PATH"
-cd "$CUSTOM_PATH"
+# Perform git checkout
+git_checkout() {
+  local url="$1"
+  local ref="${2:-}"
+  local clone_flags="${3:-}"
+  local ssh_key_path="${4:-}"
 
-# Perform the checkout
-git_checkout
+  if [[ -n "$ssh_key_path" ]]; then
+    export GIT_SSH_COMMAND="ssh -i $ssh_key_path -o StrictHostKeyChecking=no"
+  fi
+
+  if [[ -d ".git" ]]; then
+    log "Updating existing repository"
+    git remote set-url origin "$url" || error "Failed to set remote URL"
+    git fetch origin || error "Failed to fetch from remote"
+  else
+    log "Cloning repository"
+    git clone $clone_flags "$url" . || error "Failed to clone repository"
+  fi
+
+  if [[ -n "$ref" ]]; then
+    log "Checking out ref: $ref"
+    git checkout -B "$ref" "origin/$ref" || error "Failed to checkout ref"
+  else
+    log "Checking out default branch"
+    git checkout -B "${BUILDKITE_BRANCH}" "origin/${BUILDKITE_BRANCH}" || error "Failed to checkout branch"
+  fi
+}
+
+# Main execution
+parse_config
+
+mkdir -p "$CUSTOM_CHECKOUT_PATH"
+cd "$CUSTOM_CHECKOUT_PATH"
+
+for ((i=0; ; i++)); do
+  url_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_URL"
+  ref_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_REF"
+  clone_flags_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_CLONE_FLAGS"
+  ssh_key_path_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_SSH_KEY_PATH"
+
+  if [[ -z "${!url_var:-}" ]]; then
+    break
+  fi
+
+  log "Checking out repository: ${!url_var}"
+  git_checkout "${!url_var}" "${!ref_var:-}" "${!clone_flags_var:-}" "${!ssh_key_path_var:-}"
+done
 
 # Set Buildkite environment variables
-set_buildkite_env
+export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL}"
+export BUILDKITE_REFSPEC="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
+export BUILDKITE_COMMIT="$(git rev-parse HEAD)"
+export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_CHECKOUT_PATH"
 
-# Print checkout information
-print_checkout_info
+log "Custom checkout completed successfully"
+log "Current commit: $BUILDKITE_COMMIT"
+log "Commit message: $(git log -1 --pretty=%B)"
+log "Commit
