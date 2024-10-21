@@ -1,10 +1,15 @@
-name: Custom Checkout
-description: Perform custom Git checkouts in Buildkite pipelines
-author: https://github.com/saah13
-requirements:
-  - git
+name: Smooth Checkout
+description: All the things you need during a Buildkite checkout
+author: https://github.com/hasura
+requirements: []
 configuration:
   properties:
+    build_checkout_path:
+      type: string
+    delete_checkout:
+      type: boolean
+    interpolate_checkout_path:
+      type: string
     repos:
       type: array
       items:
@@ -19,4 +24,18 @@ configuration:
                   type: string
                 ref:
                   type: string
+                ssh_key_path:
+                  type: string
+                clone_flags:
+                  anyOf:
+                    - type: string
+                    - type: array
+                      items:
+                        type: string
+              additionalProperties: false
+            required:
+              - url
+        additionalProperties: false
+      required:
+        - config
   additionalProperties: false
