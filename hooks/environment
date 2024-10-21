@@ -21,3 +21,8 @@ elif [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_BUILD_CHECKOUT_PATH ]]; then
   # WORKSPACE is deprecated and preserved for backward compatibility.
   set_env WORKSPACE "${BUILDKITE_BUILD_CHECKOUT_PATH}"
 fi
+
+if [[ -v BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_CUSTOM_REPO ]]; then
+  set_env BUILDKITE_REPO "${BUILDKITE_PLUGIN_SMOOTH_CHECKOUT_CUSTOM_REPO}"
+  echo "Custom repository set: ${BUILDKITE_REPO}"
+fi
