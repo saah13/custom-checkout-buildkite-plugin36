@@ -13,11 +13,18 @@ error() {
   exit 1
 }
 
+# Function to log debug information
+debug() {
+  echo "Debug: $1"
+}
+
 # Parse plugin configuration
 parse_config() {
   SKIP_CHECKOUT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_SKIP_CHECKOUT:-false}"
+  debug "SKIP_CHECKOUT value: $SKIP_CHECKOUT"
+  
   if [[ "$SKIP_CHECKOUT" != "true" ]]; then
-    error "The 'skip_checkout' option must be set to true for this plugin to work correctly"
+    log "Warning: The 'skip_checkout' option is not set to true. This may cause conflicts with Buildkite's default checkout."
   fi
 
   CUSTOM_CHECKOUT_PATH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BUILD_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
@@ -26,18 +33,16 @@ parse_config() {
   # Parse custom repository configuration
   CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-$BUILDKITE_REPO}"
   CUSTOM_REF="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
+  
+  debug "CUSTOM_REPO: $CUSTOM_REPO"
+  debug "CUSTOM_REF: $CUSTOM_REF"
+  debug "CUSTOM_CHECKOUT_PATH: $CUSTOM_CHECKOUT_PATH"
 }
 
 # Perform git checkout
 git_checkout() {
   local url="$1"
   local ref="${2:-}"
-  local clone_flags="${3:-}"
-  local ssh_key_path="${4:-}"
-
-  if [[ -n "$ssh_key_path" ]]; then
-    export GIT_SSH_COMMAND="ssh -i $ssh_key_path -o StrictHostKeyChecking=no"
-  fi
 
   if [[ -d ".git" ]]; then
     log "Updating existing repository"
@@ -45,7 +50,7 @@ git_checkout() {
     git fetch origin || error "Failed to fetch from remote"
   else
     log "Cloning repository"
-    git clone $clone_flags "$url" . || error "Failed to clone repository"
+    git clone "$url" . || error "Failed to clone repository"
   fi
 
   if [[ -n "$ref" ]]; then
@@ -60,32 +65,19 @@ git_checkout() {
 # Main execution
 parse_config
 
+log "Custom checkout configured:"
+log "Repository: ${CUSTOM_REPO}"
+log "Ref: ${CUSTOM_REF}"
+log "Checkout path: ${CUSTOM_CHECKOUT_PATH}"
+
 mkdir -p "$CUSTOM_CHECKOUT_PATH"
 cd "$CUSTOM_CHECKOUT_PATH"
 
-# Check if any repos are configured
-if [[ -z "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-}" ]]; then
-  log "No repositories configured, using default BUILDKITE_REPO"
-  git_checkout "$BUILDKITE_REPO" "$BUILDKITE_BRANCH"
-else
-  for ((i=0; ; i++)); do
-    url_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_URL"
-    ref_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_REF"
-    clone_flags_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_CLONE_FLAGS"
-    ssh_key_path_var="BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_${i}_CONFIG_0_SSH_KEY_PATH"
-
-    if [[ -z "${!url_var:-}" ]]; then
-      break
-    fi
-
-    log "Checking out repository: ${!url_var}"
-    git_checkout "${!url_var}" "${!ref_var:-}" "${!clone_flags_var:-}" "${!ssh_key_path_var:-}"
-  done
-fi
+git_checkout "$CUSTOM_REPO" "$CUSTOM_REF"
 
 # Set Buildkite environment variables
-export BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_URL:-$BUILDKITE_REPO}"
-export BUILDKITE_REFSPEC="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOS_0_CONFIG_0_REF:-$BUILDKITE_BRANCH}"
+export BUILDKITE_REPO="$CUSTOM_REPO"
+export BUILDKITE_REFSPEC="$CUSTOM_REF"
 export BUILDKITE_COMMIT="$(git rev-parse HEAD)"
 export BUILDKITE_BUILD_CHECKOUT_PATH="$CUSTOM_CHECKOUT_PATH"
 
