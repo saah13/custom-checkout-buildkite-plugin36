@@ -1,38 +1,36 @@
-#!/bin/bash
+#!/bin/sh
 
-set -euo pipefail
-
-# Function to print messages with plugin prefix
-function plugin_echo() {
-  echo -e "\033[33m[custom-checkout] $1\033[0m"
+# Parse plugin configuration (simplified for testing)
+parse_plugin_config() {
+  if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
+    case "$BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY" in
+      https://*|http://*|git://*|ssh://*)
+        ;;
+      *)
+        echo "Error: Invalid repository URL format" >&2
+        exit 1
+        ;;
+    esac
+  fi
 }
 
-# Plugin identifier derived from the repository name
-PLUGIN_ID="BUILDKITE_PLUGIN_BUILDKITE_PLUGIN_CUSTOM_CHECKOUT"
+# Parse plugin configuration
+parse_plugin_config
 
-# Construct the full variable names
-REPO_VAR="${PLUGIN_ID}_REPOSITORY"
-BRANCH_VAR="${PLUGIN_ID}_BRANCH"
-COMMIT_VAR="${PLUGIN_ID}_COMMIT"
-
-# Then use indirect expansion to get their values
-
-# Override BUILDKITE_REPO if repository parameter is set
-if [[ -n "${!REPO_VAR:-}" ]]; then
-  export BUILDKITE_REPO="${!REPO_VAR}"
-  plugin_echo "Overriding BUILDKITE_REPO to ${BUILDKITE_REPO}"
-else
-  plugin_echo "No custom repository specified. Using default."
+# Override BUILDKITE_REPO if custom repository is provided
+if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY-}" ]; then
+  BUILDKITE_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY}"
 fi
 
-# Override BUILDKITE_BRANCH if branch parameter is set
-if [[ -n "${!BRANCH_VAR:-}" ]]; then
-  export BUILDKITE_BRANCH="${!BRANCH_VAR}"
-  plugin_echo "Overriding BUILDKITE_BRANCH to ${BUILDKITE_BRANCH}"
+# Set custom branch or commit if provided
+if [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH-}" ]; then
+  BUILDKITE_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH}"
+elif [ -n "${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT-}" ]; then
+  BUILDKITE_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT}"
 fi
 
-# Override BUILDKITE_COMMIT if commit parameter is set
-if [[ -n "${!COMMIT_VAR:-}" ]]; then
-  export BUILDKITE_COMMIT="${!COMMIT_VAR}"
-  plugin_echo "Overriding BUILDKITE_COMMIT to ${BUILDKITE_COMMIT}"
-fi
+# Log the changes
+echo "Custom checkout configured:"
+echo "Repository: ${BUILDKITE_REPO-<not set>}"
+echo "Branch: ${BUILDKITE_BRANCH-<default>}"
+echo "Commit: ${BUILDKITE_COMMIT-<default>}"
