@@ -3,7 +3,6 @@ description: Specify a custom Git repository, branch, or commit to checkout
 author: https://github.com/saah13
 requirements:
   - git
-  - jq
 configuration:
   properties:
     repository:
