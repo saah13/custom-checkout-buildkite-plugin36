@@ -1,14 +1,18 @@
-name: Smooth Checkout
-description: All the things you need during a Buildkite checkout
-author: https://github.com/hasura
+name: Custom Checkout
+description: Buildkite plugin for flexible repository checkout, including cross-repository triggers
+author: https://github.com/Test
 requirements: []
 configuration:
   properties:
+    skip_checkout:
+      type: boolean
     build_checkout_path:
       type: string
     delete_checkout:
       type: boolean
     interpolate_checkout_path:
+      type: string
+    custom_repo:
       type: string
     repos:
       type: array
