@@ -16,14 +16,23 @@ plugin_log() {
 # Function to log errors
 plugin_error() {
   echo -e "${RED}🚨 Error: ${1}${NC}" >&2
+  exit 1
 }
 
 # Function to parse plugin configuration
 parse_plugin_config() {
-  CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY:-$BUILDKITE_REPO}"
-  CUSTOM_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH:-$BUILDKITE_BRANCH}"
-  CUSTOM_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT:-$BUILDKITE_COMMIT}"
+  CUSTOM_REPO="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_REPOSITORY:-}"
+  CUSTOM_BRANCH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_BRANCH:-}"
+  CUSTOM_COMMIT="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_COMMIT:-}"
   CUSTOM_PATH="${BUILDKITE_PLUGIN_CUSTOM_CHECKOUT_PATH:-$BUILDKITE_BUILD_CHECKOUT_PATH}"
+
+  # Use default values only if custom values are not set
+  if [ -z "$CUSTOM_REPO" ]; then
+    CUSTOM_REPO="$BUILDKITE_REPO"
+  fi
+  if [ -z "$CUSTOM_BRANCH" ] && [ -z "$CUSTOM_COMMIT" ]; then
+    CUSTOM_BRANCH="$BUILDKITE_BRANCH"
+  fi
 }
 
 # Function to perform git operations
