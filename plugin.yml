@@ -1,43 +1,46 @@
-name: Smooth Checkout
-description: All the things you need during a Buildkite checkout
-author: https://github.com/hasura
+name: Improved Checkout
+description: A refined plugin for handling repository checkouts in Buildkite
+author: Your Name <your.email@example.com>
+homepage: https://github.com/your-org/improved-checkout-buildkite-plugin
+version: "1.0.0"
 requirements: []
+
 configuration:
   properties:
     skip_checkout:
       type: boolean
-    build_checkout_path:
-      type: string
+      default: false
+      description: "If true, skips the checkout process."
     delete_checkout:
       type: boolean
+      default: false
+      description: "If true, deletes the checkout directory after the build."
+    checkout_path:
+      type: string
+      description: "Custom path for checking out repositories."
     interpolate_checkout_path:
       type: string
+      description: "Checkout path with environment variables to interpolate."
     repos:
       type: array
+      description: "List of repositories to checkout."
       items:
         type: object
         properties:
-          config:
+          url:
+            type: string
+            description: "Repository Git URL."
+          ref:
+            type: string
+            description: "Branch, tag, or commit to checkout."
+          ssh_key_path:
+            type: string
+            description: "Path to SSH key for repository access."
+          clone_flags:
             type: array
             items:
-              type: object
-              properties:
-                url:
-                  type: string
-                ref:
-                  type: string
-                ssh_key_path:
-                  type: string
-                clone_flags:
-                  anyOf:
-                    - type: string
-                    - type: array
-                      items:
-                        type: string
-              additionalProperties: false
-            required:
-              - url
-        additionalProperties: false
-      required:
-        - config
+              type: string
+            description: "Additional flags for git clone."
+        required:
+          - url
   additionalProperties: false
