@@ -104,10 +104,9 @@ cd "$BUILDKITE_BUILD_CHECKOUT_PATH"
 log_section ":key: Configuring SSH"
 
 # Add SSH hosts (configurable)
-SSH_HOSTS=("github.com" "gitlab.com")
+SSH_HOSTS=("github.com")
 SSH_FINGERPRINTS=(
   "SHA256:nThbg6GmWd4dilYsXWXaYLsOMV5rGGDrEXki4ZyxjTk"  # GitHub RSA
-  "SHA256:ROQFf8q7sg5i4mlRYSx+6+VusE9JdCA52ewYZWZKPps"  # GitLab RSA
 )
 
 for i in "${!SSH_HOSTS[@]}"; do
